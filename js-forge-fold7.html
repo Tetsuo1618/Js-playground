@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>JS Forge</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14; --surface:#161a24; --panel:#1e2433; --border:#2c3347;
+  --accent:#f0c040; --accent2:#e05a3a; --green:#4ecb8d; --red:#e05a5a;
+  --text:#d8dde8; --muted:#6b7690;
+  --fhead:'Syne',sans-serif; --fcode:'Space Mono',monospace;
+  --tap:48px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%; overflow:hidden;
+  background:var(--bg); color:var(--text); font-family:var(--fhead);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:.3;
+}
+/* HEADER */
+header{
+  position:relative;z-index:20;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  background:rgba(13,15,20,0.95);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);flex-shrink:0;
+}
+.logo{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;color:var(--accent)}
+.logo span{color:var(--text)}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.xp-wrap{display:flex;align-items:center;gap:8px}
+.xp-track{width:120px;height:7px;background:var(--panel);border-radius:99px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .4s;width:0%}
+.xp-txt{font-family:var(--fcode);font-size:.72rem;color:var(--accent);white-space:nowrap}
+.streak{background:var(--accent2);color:#fff;font-family:var(--fcode);font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:99px}
+/* SHELL — 3 column on Fold 7 inner screen */
+.shell{
+  position:relative;z-index:5;
+  display:flex;height:calc(100vh - 56px);
+  padding-bottom:env(safe-area-inset-bottom);
+  overflow:hidden;
+}
+/* LEFT NAV */
+.nav{
+  width:230px;flex-shrink:0;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.nav-head{
+  padding:14px 16px 10px;
+  font-family:var(--fcode);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.prog-wrap{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.prog-ring{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--border);stroke-width:3}
+.ring-fill{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-dasharray:100.5 100.5;stroke-dashoffset:100.5;transition:stroke-dashoffset .5s ease}
+.prog-info .pct{font-size:1rem;font-weight:800;color:var(--accent);line-height:1}
+.prog-info .lbl{font-size:.68rem;color:var(--muted);margin-top:2px}
+.lesson-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.lesson-scroll::-webkit-scrollbar{width:3px}
+.lesson-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.lesson-item{
+  display:flex;align-items:center;gap:10px;
+  min-height:var(--tap);padding:10px 16px;cursor:pointer;
+  border-left:3px solid transparent;
+  transition:background .12s,border-color .12s;
+  -webkit-user-select:none;user-select:none;
+}
+.lesson-item:active{background:var(--panel)}
+.lesson-item.active{background:var(--panel);border-left-color:var(--accent)}
+.lesson-item.done .lnum{background:var(--green);color:#0d0f14}
+.lnum{
+  width:28px;height:28px;border-radius:6px;flex-shrink:0;
+  background:var(--border);color:var(--muted);
+  font-family:var(--fcode);font-size:.72rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,color .2s;
+}
+.lesson-item.active .lnum{background:var(--accent);color:#0d0f14}
+.linfo .ltitle{font-size:.85rem;font-weight:700;line-height:1.2}
+.linfo .lsub{font-size:.68rem;color:var(--muted);margin-top:2px}
+/* CENTER TUTORIAL */
+.tutorial{flex:1.1;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;min-width:0}
+.tut-scroll{flex:1;overflow-y:auto;padding:22px 22px 16px;-webkit-overflow-scrolling:touch}
+.tut-scroll::-webkit-scrollbar{width:3px}
+.tut-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.lesson-badge{
+  font-family:var(--fcode);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);background:rgba(240,192,64,.1);
+  border:1px solid rgba(240,192,64,.25);padding:3px 9px;border-radius:4px;display:inline-block;
+}
+h1.ltitle-main{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin:8px 0 5px;line-height:1.2}
+.ldesc{font-size:.88rem;color:var(--muted);line-height:1.65}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px}
+.chip{font-family:var(--fcode);font-size:.65rem;padding:3px 8px;border-radius:4px;background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.3);color:var(--accent)}
+.step{margin:14px 0;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.step-hd{display:flex;align-items:center;gap:9px;padding:11px 14px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border)}
+.snum{width:22px;height:22px;border-radius:5px;background:var(--accent);color:#0d0f14;font-family:var(--fcode);font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-hd span{font-size:.85rem;font-weight:700}
+.step-bd{padding:13px 14px;font-size:.86rem;line-height:1.72;color:var(--text)}
+.step-bd code{font-family:var(--fcode);font-size:.78rem;background:rgba(240,192,64,.1);color:var(--accent);padding:1px 5px;border-radius:3px}
+.hint-box{margin-top:9px;padding:9px 13px;background:rgba(78,203,141,.07);border-left:3px solid var(--green);border-radius:0 6px 6px 0;font-size:.8rem;color:var(--green)}
+.warn-box{margin-top:9px;padding:9px 13px;background:rgba(224,90,58,.07);border-left:3px solid var(--accent2);border-radius:0 6px 6px 0;font-size:.8rem;color:var(--accent2)}
+/* RIGHT WORKBENCH — editor stacked over output */
+.workbench{flex:1.6;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.editor-pane{flex:1.1;display:flex;flex-direction:column;border-bottom:1px solid var(--border);min-height:0}
+.pane-bar{height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+.pane-label{font-family:var(--fcode);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.y{background:#f0c040}.dot.o{background:#e05a3a}.dot.g{background:#4ecb8d}
+/* EDITOR TEXTAREA
+   font-size must be >= 16px on Android or Chrome auto-zooms on focus */
+#editor{
+  flex:1;min-height:0;
+  background:var(--bg);color:var(--text);
+  font-family:var(--fcode);font-size:16px;line-height:1.65;
+  border:none;resize:none;padding:16px;outline:none;tab-size:2;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+#editor::-webkit-scrollbar{width:3px}
+#editor::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.actions{
+  display:flex;gap:8px;flex-shrink:0;
+  padding:10px 14px;background:var(--surface);border-top:1px solid var(--border);
+  overflow-x:auto;
+}
+.actions::-webkit-scrollbar{display:none}
+.btn{
+  font-family:var(--fhead);font-size:.82rem;font-weight:700;
+  min-height:42px;padding:0 18px;
+  border-radius:8px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:transform .1s,box-shadow .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(.96)}
+.btn-run{background:var(--accent);color:#0d0f14}
+.btn-run:active{box-shadow:0 0 0 3px rgba(240,192,64,.35)}
+.btn-clr{background:var(--panel);color:var(--muted)}
+.btn-hint{background:rgba(78,203,141,.12);color:var(--green);border:1px solid rgba(78,203,141,.3)}
+.btn-chk{background:rgba(224,90,58,.12);color:var(--accent2);border:1px solid rgba(224,90,58,.3)}
+.challenge{flex-shrink:0;padding:9px 14px;background:rgba(240,192,64,.05);border-top:1px solid rgba(240,192,64,.18);font-size:.78rem;color:var(--muted);line-height:1.5}
+.challenge strong{color:var(--accent);font-family:var(--fcode)}
+.output-pane{flex:0.9;display:flex;flex-direction:column;min-height:0}
+#output{flex:1;overflow-y:auto;padding:16px;font-family:var(--fcode);font-size:14px;line-height:1.7;background:var(--bg);-webkit-overflow-scrolling:touch}
+#output::-webkit-scrollbar{width:3px}
+#output::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.oline{padding:1px 0}
+.oline.log{color:var(--text)}.oline.err{color:var(--red)}.oline.info{color:var(--accent)}.oline.warn{color:var(--accent2)}.oline.ok{color:var(--green)}
+@keyframes popIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.oline{animation:popIn .12s ease both}
+.out-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:.8rem;text-align:center}
+.out-empty .icon{font-size:2rem}
+#toast{
+  position:fixed;bottom:30px;left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:var(--panel);border:1px solid var(--border);
+  padding:10px 22px;border-radius:9px;font-size:.84rem;font-weight:600;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  z-index:9999;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.bad{border-color:var(--red);color:var(--red)}
+#toast.tip{border-color:var(--accent);color:var(--accent)}
+/* COVER SCREEN fallback — narrow portrait */
+@media(max-width:600px){
+  .shell{flex-direction:column;height:auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .nav{width:100%;max-height:56px;border-right:none;border-bottom:1px solid var(--border);flex-direction:row}
+  .nav-head,.prog-wrap{display:none}
+  .lesson-scroll{display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden}
+  .lesson-item{min-width:110px;border-left:none;border-bottom:3px solid transparent;min-height:56px}
+  .lesson-item.active{border-bottom-color:var(--accent);border-left-color:transparent}
+  .linfo .lsub{display:none}
+  .tutorial{border-right:none;border-bottom:1px solid var(--border);min-height:280px}
+  .workbench{min-height:65vh}
+  .xp-track{width:80px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">JS<span>Forge</span></div>
+  <div class="hdr-right">
+    <div class="xp-wrap">
+      <div class="xp-track"><div class="xp-fill" id="xpfill"></div></div>
+      <span class="xp-txt" id="xptxt">0 XP</span>
+    </div>
+    <span class="streak" id="streak">🔥 0</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="nav">
+    <div class="nav-head">Lesson Track</div>
+    <div class="prog-wrap">
+      <svg width="44" height="44" class="prog-ring">
+        <circle class="ring-bg" cx="22" cy="22" r="16"/>
+        <circle class="ring-fill" id="ringfill" cx="22" cy="22" r="16"/>
+      </svg>
+      <div class="prog-info">
+        <div class="pct" id="ringpct">0%</div>
+        <div class="lbl">Complete</div>
+      </div>
+    </div>
+    <div class="lesson-scroll" id="lessonlist"></div>
+  </nav>
+
+  <div class="tutorial">
+    <div class="tut-scroll" id="tutpanel"></div>
+  </div>
+
+  <div class="workbench">
+    <div class="editor-pane">
+      <div class="pane-bar">
+        <div class="pane-label">
+          <div class="dot y"></div><div class="dot o"></div><div class="dot g"></div>
+          &nbsp;editor.js
+        </div>
+        <span style="font-family:var(--fcode);font-size:.65rem;color:var(--muted)">Ctrl+Enter = Run</span>
+      </div>
+      <textarea id="editor"
+        spellcheck="false"
+        autocorrect="off"
+        autocapitalize="off"
+        autocomplete="off"
+        placeholder="// Write your JavaScript here..."></textarea>
+      <div class="actions">
+        <button class="btn btn-run" onclick="runCode()">&#9654; Run</button>
+        <button class="btn btn-clr"  onclick="clearEditor()">&#x2715; Clear</button>
+        <button class="btn btn-hint" onclick="showHint()">&#x1F4A1; Hint</button>
+        <button class="btn btn-chk"  onclick="checkAnswer()">&#x2714; Check</button>
+      </div>
+      <div class="challenge" id="challenge">
+        <strong>CHALLENGE &#8594;</strong> Select a lesson to begin.
+      </div>
+    </div>
+
+    <div class="output-pane">
+      <div class="pane-bar">
+        <div class="pane-label"><div class="dot g"></div>&nbsp;console output</div>
+        <button class="btn btn-clr" style="min-height:30px;padding:0 10px;font-size:.72rem" onclick="clearOutput()">Clear</button>
+      </div>
+      <div id="output">
+        <div class="out-empty">
+          <div class="icon">&#x26A1;</div>
+          <div>Tap <strong style="color:var(--accent)">&#9654; Run</strong> to see output</div>
+          <div style="font-size:.72rem">console.log() prints here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let xp=0,streak=0,done={},current=0,captured='';
+
+const lessons=[
+  {id:0,title:"What is JavaScript?",sub:"Intro",badge:"LESSON 1",
+   desc:"JavaScript is the language that makes websites interactive — buttons, animations, games. It runs in your browser. No install needed!",
+   concepts:["browser","interactive","console"],
+   steps:[
+     {n:1,title:"Meet the Console",
+      body:`The <code>console</code> is your notebook. <code>console.log()</code> prints anything. Think of "log" as "write this down."`,
+      hint:`console.log("Hello, World!") is traditionally the first program anyone writes.`},
+     {n:2,title:"Strings vs Numbers",
+      body:`Words in quotes are <strong>strings</strong>: <code>"Hello"</code>. Numbers stand alone: <code>42</code>. JavaScript treats them differently.<div class="hint-box">Rule of 3: <code>"apple"</code> is a string. <code>99</code> is a number. <code>true</code> is a boolean.</div>`},
+     {n:3,title:"Your Turn",
+      body:`Type <code>console.log("Hello, World!");</code> and tap Run.<div class="warn-box">Semicolons <code>;</code> end a statement — like a period ends a sentence.</div>`}
+   ],
+   starter:`// Welcome to JSForge! 🔥\n// Lines starting with // are comments.\n// JavaScript ignores comments — they are notes for YOU.\n\n// Write your first line below:\n`,
+   challenge:"Print exactly: Hello, World!",
+   hint:`console.log("Hello, World!");`,
+   check:o=>o.includes("Hello, World!")},
+
+  {id:1,title:"Variables",sub:"let, const, var",badge:"LESSON 2",
+   desc:"Variables are labeled boxes. Put a value inside, give it a name, use it anywhere.",
+   concepts:["let","const","var","declaration"],
+   steps:[
+     {n:1,title:"let — a changeable box",
+      body:`<code>let age = 13;</code> creates a box named <code>age</code>. You can update it later: <code>age = 14;</code><div class="hint-box">Use <code>let</code> when the value might change — like a score.</div>`},
+     {n:2,title:"const — a sealed box",
+      body:`<code>const name = "Rob";</code> — set once, never changed.<div class="warn-box">Reassigning a <code>const</code> throws an error!</div>`},
+     {n:3,title:"Logging Variables",
+      body:`No quotes needed: <code>console.log(age);</code> — prints the value. Mix: <code>console.log("My age is", age);</code>`}
+   ],
+   starter:`// VARIABLES\nlet myName = "";  // put your name here\nlet myAge  = 0;   // put your age here\n\nconsole.log(myName);\nconsole.log(myAge);\n`,
+   challenge:"Create a variable 'score' set to 100, then print it.",
+   hint:`let score = 100;\nconsole.log(score);`,
+   check:o=>o.includes("100")},
+
+  {id:2,title:"Math & Operators",sub:"+, -, *, /",badge:"LESSON 3",
+   desc:"JavaScript is a full calculator. Add, subtract, multiply, divide — combine with variables.",
+   concepts:["operators","arithmetic","expressions"],
+   steps:[
+     {n:1,title:"Basic Operators",
+      body:`<code>+</code> add &nbsp; <code>-</code> subtract &nbsp; <code>*</code> multiply &nbsp; <code>/</code> divide<br>Example: <code>let result = 10 + 5;</code> stores <code>15</code>.`},
+     {n:2,title:"Modulo — Remainder",
+      body:`<code>%</code> gives the remainder. <code>10 % 3</code> = <code>1</code>.<div class="hint-box"><code>number % 2 === 0</code> checks if a number is even!</div>`},
+     {n:3,title:"String Concatenation",
+      body:`<code>+</code> glues strings: <code>"Hello" + " " + "World"</code> becomes <code>"Hello World"</code>. Called <strong>concatenation</strong>.`}
+   ],
+   starter:`// MATH\nlet a = 20, b = 5;\nconsole.log(a + b);\nconsole.log(a - b);\nconsole.log(a * b);\nconsole.log(a / b);\nconsole.log(a % b);\n`,
+   challenge:"Create x=15 and y=4. Print their sum AND product.",
+   hint:`let x=15,y=4;\nconsole.log(x+y);\nconsole.log(x*y);`,
+   check:o=>o.includes("19")&&o.includes("60")},
+
+  {id:3,title:"If / Else",sub:"Decisions",badge:"LESSON 4",
+   desc:"Programs make decisions. If this is true, do X. Otherwise, do Y. That is if/else.",
+   concepts:["if","else","comparison","boolean"],
+   steps:[
+     {n:1,title:"The if Statement",
+      body:`<code>if (condition) { ... }</code> runs only when condition is <code>true</code>.<br>Example: <code>if (age >= 13) { console.log("Teen!"); }</code>`},
+     {n:2,title:"Comparison Operators",
+      body:`<code>===</code> equal &nbsp; <code>!==</code> not equal &nbsp; <code>&gt;</code> greater &nbsp; <code>&lt;</code> less<div class="warn-box">Use <code>===</code> (triple equals) NOT <code>=</code>. Very common beginner mistake!</div>`},
+     {n:3,title:"else — the fallback",
+      body:`<code>if (score > 50) { console.log("Pass"); } else { console.log("Fail"); }</code>`}
+   ],
+   starter:`// IF / ELSE\nlet score = 75;\n\nif (score >= 60) {\n  console.log("You passed! 🎉");\n} else {\n  console.log("Keep going! 💪");\n}\n\n// Change score to 40 and run again!\n`,
+   challenge:"if temperature > 30 print 'Hot!' else print 'Cool!'",
+   hint:`let temperature=35;\nif(temperature>30){\n  console.log("Hot!");\n}else{\n  console.log("Cool!");\n}`,
+   check:o=>o.includes("Hot!")||o.includes("Cool!")},
+
+  {id:4,title:"Functions",sub:"Reusable Blocks",badge:"LESSON 5",
+   desc:"A function is a named block of code you can run any time. Write once, use forever.",
+   concepts:["function","parameter","return","call"],
+   steps:[
+     {n:1,title:"Defining a Function",
+      body:`<code>function greet() { console.log("Hello!"); }</code><br>DEFINES it but does not run yet — like writing a recipe without cooking it.`},
+     {n:2,title:"Calling a Function",
+      body:`<code>greet();</code> — the <code>()</code> trigger it. Called <strong>invoking</strong>.<div class="hint-box">Call the same function 100 times. Write once, reuse forever.</div>`},
+     {n:3,title:"Parameters and Return",
+      body:`<code>function add(a, b) { return a + b; }</code><br><code>console.log(add(3, 4));</code> prints <code>7</code>`}
+   ],
+   starter:`// FUNCTIONS\n\nfunction sayHello(name) {\n  // 'name' fills in when you call the function\n  console.log("Hello, " + name + "!");\n}\n\nsayHello("Rob");\nsayHello("World");\n\nfunction multiply(x, y) {\n  return x * y; // sends result back\n}\n\nlet answer = multiply(6, 7);\nconsole.log("6 x 7 =", answer);\n`,
+   challenge:"Write a function 'square' that returns a number times itself. Call it with 9.",
+   hint:`function square(n){\n  return n*n;\n}\nconsole.log(square(9));`,
+   check:o=>o.includes("81")},
+
+  {id:5,title:"Arrays",sub:"Lists of Data",badge:"LESSON 6",
+   desc:"Arrays are ordered lists. One array replaces 10 separate variables.",
+   concepts:["array","index","length","push"],
+   steps:[
+     {n:1,title:"Creating an Array",
+      body:`<code>let fruits = ["apple", "banana", "mango"];</code><br>Square brackets <code>[ ]</code> hold items separated by commas.`},
+     {n:2,title:"Zero-Based Index",
+      body:`Counting starts at <strong>0</strong>!<br><code>fruits[0]</code> is <code>"apple"</code>. <code>fruits[1]</code> is <code>"banana"</code>.<div class="warn-box">First item is index 0, NOT 1. Classic beginner trip-up!</div>`},
+     {n:3,title:"Useful Methods",
+      body:`<code>fruits.length</code> count &nbsp; <code>fruits.push("x")</code> add to end &nbsp; <code>fruits.pop()</code> remove last`}
+   ],
+   starter:`// ARRAYS\nlet colors = ["red", "green", "blue"];\n\nconsole.log(colors[0]);\nconsole.log(colors.length);\n\ncolors.push("yellow");\nconsole.log(colors);\n\n// Last item trick:\nconsole.log(colors[colors.length - 1]);\n`,
+   challenge:"Create an array of 3 favorite foods. Print the second one.",
+   hint:`let foods=["pizza","tacos","ramen"];\nconsole.log(foods[1]);`,
+   check:o=>o.trim().length>0},
+
+  {id:6,title:"Loops",sub:"Repeat Without Repeating",badge:"LESSON 7",
+   desc:"Loops run code multiple times automatically. One of the most powerful tools in programming.",
+   concepts:["for","while","iteration","loop"],
+   steps:[
+     {n:1,title:"The for Loop",
+      body:`<code>for (let i = 0; i &lt; 5; i++) { console.log(i); }</code><br>Three parts: start, condition, increment. <code>i++</code> means add 1.`},
+     {n:2,title:"Loop Through Arrays",
+      body:`<code>for (let fruit of fruits) { console.log(fruit); }</code><div class="hint-box">The <code>of</code> loop is the modern clean way to walk an array.</div>`},
+     {n:3,title:"While Loop",
+      body:`<code>while (condition) { ... }</code> keeps running while true.<div class="warn-box">Always make the condition eventually false or it loops forever and crashes!</div>`}
+   ],
+   starter:`// LOOPS\n\nfor (let i = 1; i <= 5; i++) {\n  console.log("Count:", i);\n}\n\nlet animals = ["cat", "dog", "bird"];\nfor (let animal of animals) {\n  console.log("Animal:", animal);\n}\n`,
+   challenge:"Use a loop to print numbers 1 through 10.",
+   hint:`for(let i=1;i<=10;i++){\n  console.log(i);\n}`,
+   check:o=>{for(let i=1;i<=10;i++)if(!o.includes(String(i)))return false;return true;}},
+
+  {id:7,title:"Objects",sub:"Key-Value Pairs",badge:"LESSON 8",
+   desc:"Objects group related data. name, age, and score all in one place instead of three separate variables.",
+   concepts:["object","property","key","value"],
+   steps:[
+     {n:1,title:"Creating an Object",
+      body:`<code>let player = { name: "Rob", score: 100, level: 3 };</code><br>Curly braces hold <strong>key: value</strong> pairs.`},
+     {n:2,title:"Accessing Properties",
+      body:`Dot: <code>player.name</code> returns <code>"Rob"</code><br>Bracket: <code>player["score"]</code> returns <code>100</code><div class="hint-box">Dot notation is cleaner for most cases.</div>`},
+     {n:3,title:"Update and Add",
+      body:`<code>player.score = 200;</code> updates. <code>player.health = 50;</code> adds a brand new property.`}
+   ],
+   starter:`// OBJECTS\nlet car = {\n  brand: "Toyota",\n  model: "Camry",\n  year:  2023,\n  color: "silver"\n};\n\nconsole.log(car.brand);\nconsole.log(car.year);\n\ncar.color = "black";\nconsole.log("New color:", car.color);\n\ncar.mileage = 5000;\nconsole.log("Mileage:", car.mileage);\n`,
+   challenge:"Create a 'person' object with name, age, city. Print all three.",
+   hint:`let person={name:"Rob",age:30,city:"Chicago"};\nconsole.log(person.name);\nconsole.log(person.age);\nconsole.log(person.city);`,
+   check:o=>o.trim().split('\n').filter(l=>l.trim()).length>=3}
+];
+
+function buildNav(){
+  const list=document.getElementById('lessonlist');
+  list.innerHTML='';
+  lessons.forEach((l,i)=>{
+    const el=document.createElement('div');
+    el.className='lesson-item'+(i===current?' active':'')+(done[i]?' done':'');
+    el.innerHTML=`<div class="lnum">${done[i]?'&#10003;':i+1}</div><div class="linfo"><div class="ltitle">${l.title}</div><div class="lsub">${l.sub}</div></div>`;
+    el.addEventListener('click',()=>loadLesson(i));
+    list.appendChild(el);
+  });
+  const pct=Math.round((Object.keys(done).length/lessons.length)*100);
+  const C=2*Math.PI*16;
+  const offset=C-(pct/100)*C;
+  document.getElementById('ringfill').style.strokeDasharray=`${C} ${C}`;
+  document.getElementById('ringfill').style.strokeDashoffset=offset;
+  document.getElementById('ringpct').textContent=pct+'%';
+}
+
+function loadLesson(index){
+  current=index;
+  const l=lessons[index];
+  const chips=l.concepts.map(c=>`<span class="chip">${c}</span>`).join('');
+  const stepsHTML=l.steps.map(s=>`
+    <div class="step">
+      <div class="step-hd"><div class="snum">${s.n}</div><span>${s.title}</span></div>
+      <div class="step-bd">${s.body}${s.hint?`<div class="hint-box">&#x1F4A1; ${s.hint}</div>`:''}</div>
+    </div>`).join('');
+  document.getElementById('tutpanel').innerHTML=`
+    <span class="lesson-badge">${l.badge}</span>
+    <h1 class="ltitle-main">${l.title}</h1>
+    <p class="ldesc">${l.desc}</p>
+    <div class="chips">${chips}</div>
+    ${stepsHTML}`;
+  document.getElementById('editor').value=l.starter;
+  document.getElementById('challenge').innerHTML=`<strong>CHALLENGE &#8594;</strong> ${l.challenge}`;
+  clearOutput();
+  buildNav();
+}
+
+function runCode(){
+  const code=document.getElementById('editor').value;
+  if(!code.trim()){toast('Nothing to run!','tip');return;}
+  const out=document.getElementById('output');
+  out.innerHTML='';captured='';
+  const _l=console.log,_e=console.error,_w=console.warn;
+  function print(text,cls='log'){
+    const d=document.createElement('div');
+    d.className='oline '+cls;
+    d.textContent=String(text);
+    out.appendChild(d);
+    captured+=String(text)+'\n';
+  }
+  console.log=(...a)=>{print(a.map(x=>typeof x==='object'?JSON.stringify(x,null,2):String(x)).join(' '));_l(...a);};
+  console.error=(...a)=>{print(a.join(' '),'err');_e(...a);};
+  console.warn=(...a)=>{print(a.join(' '),'warn');_w(...a);};
+  try{
+    new Function(code)();
+    if(!out.children.length)print('(no output — did you forget console.log?)','info');
+  }catch(e){
+    print('Error: '+e.message,'err');
+    print('Tip: check spelling, missing brackets, or quotes.','info');
+  }finally{
+    console.log=_l;console.error=_e;console.warn=_w;
+  }
+}
+
+function checkAnswer(){
+  if(!captured){toast('Run your code first!','tip');return;}
+  const passed=lessons[current].check(captured);
+  if(passed){
+    if(!done[current]){xp+=25;streak++;done[current]=true;updateXP();buildNav();}
+    toast('Challenge passed! +25 XP','ok');
+    if(current<lessons.length-1)setTimeout(()=>loadLesson(current+1),1400);
+  }else{
+    streak=0;updateStreak();
+    toast('Not quite — check the hint! 💪','bad');
+  }
+}
+
+function showHint(){
+  const out=document.getElementById('output');
+  out.innerHTML='';
+  const d=document.createElement('div');
+  d.className='oline info';
+  d.textContent='Hint: '+lessons[current].hint;
+  out.appendChild(d);
+  xp=Math.max(0,xp-5);updateXP();
+  toast('Hint shown (-5 XP)','tip');
+}
+
+function clearEditor(){document.getElementById('editor').value='';document.getElementById('editor').focus();}
+
+function clearOutput(){
+  document.getElementById('output').innerHTML=`<div class="out-empty"><div class="icon">&#x26A1;</div><div>Tap <strong style="color:var(--accent)">Run</strong> to see output</div><div style="font-size:.72rem">console.log() prints here</div></div>`;
+  captured='';
+}
+
+function updateXP(){
+  const max=lessons.length*25,pct=Math.min(100,(xp/max)*100);
+  document.getElementById('xpfill').style.width=pct+'%';
+  document.getElementById('xptxt').textContent=xp+' XP';
+  updateStreak();
+}
+function updateStreak(){document.getElementById('streak').textContent='🔥 '+streak;}
+
+let _tt;
+function toast(msg,type='tip'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+type;
+  clearTimeout(_tt);_tt=setTimeout(()=>t.className='',2600);
+}
+
+document.getElementById('editor').addEventListener('keydown',function(e){
+  if(e.key==='Tab'){
+    e.preventDefault();
+    const s=this.selectionStart,end=this.selectionEnd;
+    this.value=this.value.slice(0,s)+'  '+this.value.slice(end);
+    this.selectionStart=this.selectionEnd=s+2;
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter')runCode();
+});
+
+loadLesson(0);buildNav();
+</script>
+</body>
+</html>
